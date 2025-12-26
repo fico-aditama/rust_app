@@ -58,6 +58,22 @@ cargo run --bin rust_app_web
 - ✅ Real-time updates
 - ✅ Beautiful gradient design
 
+### Linux Desktop App (Native GTK - Recommended untuk Linux! 🐧)
+```bash
+# Install dependencies dulu:
+# sudo apt-get install libgtk-4-dev libadwaita-1-dev
+
+# Uncomment GTK dependencies di Cargo.toml
+# Lalu run:
+cargo run --bin rust_app_linux
+```
+
+**Features:**
+- ✅ Native Linux look & feel (GTK4 + Adwaita)
+- ✅ Modern desktop UI
+- ✅ Keyboard shortcuts
+- ✅ Responsive design
+
 ### GUI Version (Window-based - Requires Rust 1.76+)
 ```bash
 # Uncomment egui dependencies in Cargo.toml first
@@ -65,7 +81,7 @@ cargo run --bin rust_app_web
 cargo run --bin rust_app_gui
 ```
 
-**Note:** GUI version memerlukan Rust yang lebih baru. Jika Rust 1.75, gunakan TUI atau Web version yang sudah compatible!
+**Note:** GUI version memerlukan Rust yang lebih baru. Jika Rust 1.75, gunakan TUI, Web, atau Linux Desktop version yang sudah compatible!
 
 ## Project Structure
 

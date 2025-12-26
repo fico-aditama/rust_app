@@ -18,6 +18,12 @@ tower-http = { version = "0.5", features = ["fs", "cors"] }
 # eframe = "0.22"
 # egui = "0.22"
 
+# GTK-rs untuk Linux Desktop App (Native Linux GUI)
+# Uncomment untuk pakai Linux desktop app
+# gtk = { version = "0.7", features = ["v4_10"] }
+# glib = "0.19"
+# adw = "0.5"
+
 [[bin]]
 name = "rust_app"
 path = "src/main.rs"
@@ -33,4 +39,8 @@ path = "src/main_tui.rs"
 [[bin]]
 name = "rust_app_web"
 path = "src/main_web.rs"
+
+[[bin]]
+name = "rust_app_linux"
+path = "src/main_linux.rs"
 
