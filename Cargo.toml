@@ -1,0 +1,36 @@
+[package]
+name = "rust_app"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+chrono = { version = "0.4", features = ["serde"] }
+tokio = { version = "1", features = ["full"] }
+axum = "0.7"
+tower = "0.4"
+tower-http = { version = "0.5", features = ["fs", "cors"] }
+
+# GUI dependencies (optional - uncomment untuk pakai GUI version)
+# NOTE: GUI version require Rust yang lebih baru (1.76+)
+# Untuk sekarang, gunakan TUI version yang compatible dengan Rust 1.75
+# eframe = "0.22"
+# egui = "0.22"
+
+[[bin]]
+name = "rust_app"
+path = "src/main.rs"
+
+[[bin]]
+name = "rust_app_gui"
+path = "src/main_egui.rs"
+
+[[bin]]
+name = "rust_app_tui"
+path = "src/main_tui.rs"
+
+[[bin]]
+name = "rust_app_web"
+path = "src/main_web.rs"
+
