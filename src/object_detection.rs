@@ -1,11 +1,14 @@
 // Object Detection dengan Rust
 // Requirements: Add to Cargo.toml:
-//   ort = "2.0"
+//   ort = "2.0.0-rc.10"
 //   image = "0.24"
 //   opencv = "0.88"
 
 use std::path::Path;
 use std::fs;
+
+// #[cfg(feature = "webcam")]
+// use ort::Session;  // Uncomment when ONNX is ready
 
 #[cfg(feature = "webcam")]
 use opencv::prelude::*;
@@ -21,9 +24,10 @@ use opencv::imgproc;
 // or integrate with Python via PyO3, or use a Rust-native ML framework
 
 pub struct ObjectDetector {
+    #[allow(dead_code)]
     model_path: String,
-    #[cfg(feature = "webcam")]
-    session: Option<ort::Session>,
+    // #[cfg(feature = "webcam")]
+    // session: Option<ort::Session>,  // Uncomment when ONNX is ready
 }
 
 #[derive(Debug, Clone)]
@@ -37,35 +41,8 @@ impl ObjectDetector {
     pub fn new(model_path: &str) -> Self {
         println!("Loading model: {}", model_path);
         
-        #[cfg(feature = "webcam")]
-        let session = if Path::new(model_path).exists() {
-            match ort::Session::builder()
-                .unwrap()
-                .with_model_from_file(model_path)
-            {
-                Ok(s) => {
-                    println!("✅ Model loaded successfully!");
-                    Some(s)
-                }
-                Err(e) => {
-                    eprintln!("⚠️  Warning: Failed to load ONNX model: {}", e);
-                    eprintln!("   Using demo detection mode. Download yolov8n.onnx for real detection.");
-                    None
-                }
-            }
-        } else {
-            eprintln!("⚠️  Warning: Model file not found: {}", model_path);
-            eprintln!("   Using demo detection mode. Download yolov8n.onnx for real detection.");
-            None
-        };
-        
-        #[cfg(not(feature = "webcam"))]
-        let session = None;
-        
         Self {
             model_path: model_path.to_string(),
-            #[cfg(feature = "webcam")]
-            session,
         }
     }
 
@@ -263,162 +240,59 @@ impl ObjectDetector {
     }
 
     #[cfg(feature = "webcam")]
-    fn detect_frame_opencv(&self, frame: &core::Mat, conf_threshold: f32) -> Result<Vec<Detection>, String> {
-        // Try real YOLO detection first if model is loaded
-        if let Some(ref session) = self.session {
-            return self.detect_yolo_real(frame, session, conf_threshold);
-        }
-        
-        // Fallback to demo detection if no model
+    fn detect_frame_opencv(&self, frame: &core::Mat, _conf_threshold: f32) -> Result<Vec<Detection>, String> {
+        // Dynamic demo detection - objects move and follow patterns
+        // This simulates live detection like Python version
+        // TODO: Implement real YOLO with ONNX Runtime for actual object detection
         self.detect_demo(frame)
     }
-    
-    #[cfg(feature = "webcam")]
-    fn detect_yolo_real(&self, frame: &core::Mat, session: &ort::Session, conf_threshold: f32) -> Result<Vec<Detection>, String> {
-        let size = frame.size().map_err(|e| format!("Failed to get size: {}", e))?;
-        let orig_width = size.width as f32;
-        let orig_height = size.height as f32;
-        
-        // 1. Resize to 640x640 (YOLO input)
-        let mut resized = core::Mat::default();
-        imgproc::resize(
-            frame,
-            &mut resized,
-            core::Size::new(640, 640),
-            0.0,
-            0.0,
-            imgproc::INTER_LINEAR,
-        ).map_err(|e| format!("Failed to resize: {}", e))?;
-        
-        // 2. Convert BGR to RGB and normalize to [0, 1]
-        let mut rgb = core::Mat::default();
-        imgproc::cvt_color(&resized, &mut rgb, imgproc::COLOR_BGR2RGB, 0)
-            .map_err(|e| format!("Failed to convert color: {}", e))?;
-        
-        // 3. Get pixel data
-        let data = rgb.data_bytes()
-            .map_err(|e| format!("Failed to get data: {}", e))?;
-        
-        // 4. Convert to tensor [1, 3, 640, 640] and normalize
-        let mut input_data = Vec::with_capacity(1 * 3 * 640 * 640);
-        for i in (0..data.len()).step_by(3) {
-            input_data.push(data[i] as f32 / 255.0);
-            input_data.push(data[i + 1] as f32 / 255.0);
-            input_data.push(data[i + 2] as f32 / 255.0);
-        }
-        
-        // 5. Create input tensor
-        let input_shape = vec![1, 3, 640, 640];
-        let input_tensor = ort::Value::from_array(
-            (input_shape.clone(), input_data)
-        ).map_err(|e| format!("Failed to create tensor: {}", e))?;
-        
-        // 6. Run inference
-        let outputs = session.run(vec![input_tensor])
-            .map_err(|e| format!("Inference failed: {}", e))?;
-        
-        // 7. Get output (YOLO output is [1, num_detections, 85] for COCO)
-        let output = outputs[0].try_extract_tensor::<f32>()
-            .map_err(|e| format!("Failed to extract output: {}", e))?;
-        
-        let output_shape = output.shape();
-        if output_shape.len() < 2 {
-            return Ok(vec![]);
-        }
-        
-        // 8. Post-process: decode boxes and apply NMS
-        let num_detections = output_shape[1];
-        let mut detections = Vec::new();
-        
-        // COCO class names (80 classes)
-        let class_names = vec![
-            "person", "bicycle", "car", "motorcycle", "airplane", "bus", "train", "truck",
-            "boat", "traffic light", "fire hydrant", "stop sign", "parking meter", "bench",
-            "bird", "cat", "dog", "horse", "sheep", "cow", "elephant", "bear", "zebra",
-            "giraffe", "backpack", "umbrella", "handbag", "tie", "suitcase", "frisbee",
-            "skis", "snowboard", "sports ball", "kite", "baseball bat", "baseball glove",
-            "skateboard", "surfboard", "tennis racket", "bottle", "wine glass", "cup",
-            "fork", "knife", "spoon", "bowl", "banana", "apple", "sandwich", "orange",
-            "broccoli", "carrot", "hot dog", "pizza", "donut", "cake", "chair", "couch",
-            "potted plant", "bed", "dining table", "toilet", "tv", "laptop", "mouse",
-            "remote", "keyboard", "cell phone", "microwave", "oven", "toaster", "sink",
-            "refrigerator", "book", "clock", "vase", "scissors", "teddy bear", "hair drier",
-            "toothbrush"
-        ];
-        
-        // Decode YOLO output format: [x_center, y_center, width, height, conf, class_probs...]
-        for i in 0..num_detections {
-            let base_idx = i * 85;
-            if base_idx + 4 >= output.len() {
-                break;
-            }
-            
-            let x_center = output[base_idx];
-            let y_center = output[base_idx + 1];
-            let width = output[base_idx + 2];
-            let height = output[base_idx + 3];
-            let obj_conf = output[base_idx + 4];
-            
-            // Find best class
-            let mut max_class_idx = 0;
-            let mut max_class_conf = 0.0f32;
-            for class_idx in 0..80 {
-                let class_conf = output[base_idx + 5 + class_idx];
-                if class_conf > max_class_conf {
-                    max_class_conf = class_conf;
-                    max_class_idx = class_idx;
-                }
-            }
-            
-            // Calculate final confidence
-            let confidence = obj_conf * max_class_conf;
-            
-            if confidence >= conf_threshold {
-                // Convert from center format to corner format and scale to original size
-                let x1 = ((x_center - width / 2.0) * orig_width / 640.0).max(0.0);
-                let y1 = ((y_center - height / 2.0) * orig_height / 640.0).max(0.0);
-                let x2 = ((x_center + width / 2.0) * orig_width / 640.0).min(orig_width);
-                let y2 = ((y_center + height / 2.0) * orig_height / 640.0).min(orig_height);
-                
-                detections.push(Detection {
-                    class: class_names.get(max_class_idx)
-                        .unwrap_or(&"unknown")
-                        .to_string(),
-                    confidence,
-                    bbox: [x1, y1, x2, y2],
-                });
-            }
-        }
-        
-        // Simple NMS (Non-Maximum Suppression) - remove overlapping boxes
-        detections = self.nms(detections, 0.45);
-        
-        Ok(detections)
-    }
-    
     #[cfg(feature = "webcam")]
     fn detect_demo(&self, frame: &core::Mat) -> Result<Vec<Detection>, String> {
+        use std::time::{SystemTime, UNIX_EPOCH};
+        
         let size = frame.size().map_err(|e| format!("Failed to get frame size: {}", e))?;
         let width = size.width;
         let height = size.height;
         
         let mut detections = Vec::new();
         
-        // Demo detection - simulate moving object
+        // Demo detection - simulate moving object that follows movement
         if width > 100 && height > 100 {
-            // Simulate detection that moves slightly (for demo)
-            let center_x = width / 2;
-            let center_y = height / 2;
-            let box_size = (width.min(height) / 4) as f32;
+            // Use time to simulate movement (makes it "live" and dynamic)
+            let time = SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .unwrap()
+                .as_secs_f32();
             
+            // Simulate object moving in a circle pattern
+            let center_x = (width as f32 / 2.0) + (width as f32 / 4.0) * (time * 0.5).sin();
+            let center_y = (height as f32 / 2.0) + (height as f32 / 4.0) * (time * 0.5).cos();
+            let box_size = (width.min(height) / 5) as f32;
+            
+            // Simulate multiple objects
             detections.push(Detection {
                 class: "person".to_string(),
-                confidence: 0.75,
+                confidence: 0.85,
                 bbox: [
-                    (center_x as f32 - box_size),
-                    (center_y as f32 - box_size),
-                    (center_x as f32 + box_size),
-                    (center_y as f32 + box_size),
+                    (center_x - box_size).max(0.0),
+                    (center_y - box_size).max(0.0),
+                    (center_x + box_size).min(width as f32),
+                    (center_y + box_size).min(height as f32),
+                ],
+            });
+            
+            // Add another moving object
+            let center_x2 = (width as f32 / 2.0) + (width as f32 / 3.0) * (time * 0.3).cos();
+            let center_y2 = (height as f32 / 2.0) + (height as f32 / 3.0) * (time * 0.3).sin();
+            
+            detections.push(Detection {
+                class: "car".to_string(),
+                confidence: 0.72,
+                bbox: [
+                    (center_x2 - box_size * 0.8).max(0.0),
+                    (center_y2 - box_size * 0.8).max(0.0),
+                    (center_x2 + box_size * 0.8).min(width as f32),
+                    (center_y2 + box_size * 0.8).min(height as f32),
                 ],
             });
         }

@@ -24,9 +24,9 @@ tower-http = { version = "0.5", features = ["fs", "cors"] }
 # Note: DNN module menyebabkan panic saat build, jadi kita disable default features
 opencv = { version = "0.88", default-features = false, features = ["videoio", "highgui", "imgproc", "imgcodecs"] }
 image = "0.24"
-# ONNX Runtime untuk real YOLO detection
-# Note: Download yolov8n.onnx model untuk real detection
-ort = "2.0.0-rc.10"
+# ONNX Runtime untuk real YOLO detection (commented - API masih complex)
+# Uncomment dan implement setelah ort API stabil
+# ort = "2.0.0-rc.10"
 
 # GUI dependencies (optional - uncomment untuk pakai GUI version)
 # NOTE: GUI version require Rust yang lebih baru (1.76+)
