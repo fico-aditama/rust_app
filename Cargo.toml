@@ -19,18 +19,20 @@ tower-http = { version = "0.5", features = ["fs", "cors"] }
 # egui = "0.22"
 
 # GTK-rs untuk Linux Desktop App (Native Linux GUI)
-# Uncomment untuk pakai Linux desktop app
-# gtk = { version = "0.7", features = ["v4_10"] }
-# glib = "0.19"
-# adw = "0.5"
+# NOTE: GTK-rs require Rust yang lebih baru (1.76+)
+# Untuk Rust 1.75, gunakan Web version atau TUI version sebagai alternatif
+# Uncomment setelah update Rust:
+# gtk = "0.6"
+# glib = "0.18"
 
 [[bin]]
 name = "rust_app"
 path = "src/main.rs"
 
-[[bin]]
-name = "rust_app_gui"
-path = "src/main_egui.rs"
+# GUI version (egui) - Comment out karena require Rust 1.76+
+# [[bin]]
+# name = "rust_app_gui"
+# path = "src/main_egui.rs"
 
 [[bin]]
 name = "rust_app_tui"
@@ -40,7 +42,9 @@ path = "src/main_tui.rs"
 name = "rust_app_web"
 path = "src/main_web.rs"
 
-[[bin]]
-name = "rust_app_linux"
-path = "src/main_linux.rs"
+# Linux Desktop App - Comment out karena require Rust 1.76+
+# Uncomment setelah update Rust dan uncomment GTK dependencies di atas
+# [[bin]]
+# name = "rust_app_linux"
+# path = "src/main_linux.rs"
 

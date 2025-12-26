@@ -5,7 +5,7 @@
 // sudo apt-get install libgtk-4-dev libadwaita-1-dev
 
 use gtk::prelude::*;
-use adw::prelude::*;
+use gtk::glib;
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::rc::Rc;
@@ -62,11 +62,11 @@ fn save_notes(notes: &Notes) -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
-fn build_ui(app: &adw::Application) {
+fn build_ui(app: &gtk::Application) {
     let notes = Arc::new(Mutex::new(load_notes()));
 
     // Create main window
-    let window = adw::ApplicationWindow::builder()
+    let window = gtk::ApplicationWindow::builder()
         .application(app)
         .title("📝 Note Manager")
         .default_width(600)
@@ -74,7 +74,7 @@ fn build_ui(app: &adw::Application) {
         .build();
 
     // Create header bar
-    let header = adw::HeaderBar::new();
+    let header = gtk::HeaderBar::new();
     window.set_titlebar(Some(&header));
 
     // Create main box
@@ -244,7 +244,7 @@ fn build_ui(app: &adw::Application) {
 }
 
 fn main() {
-    let app = adw::Application::builder()
+    let app = gtk::Application::builder()
         .application_id("com.rust_app.note_manager")
         .build();
 
