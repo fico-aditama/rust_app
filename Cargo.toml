@@ -21,7 +21,8 @@ tower-http = { version = "0.5", features = ["fs", "cors"] }
 # GTK-rs untuk Linux Desktop App (Native Linux GUI)
 # NOTE: GTK-rs require Rust yang lebih baru (1.76+)
 # Untuk Rust 1.75, gunakan Web version atau TUI version sebagai alternatif
-# Uncomment setelah update Rust:
+# Error: fragile dependency yanked - GTK 0.6 tidak compatible dengan Rust 1.75
+# Solusi: Update Rust dulu atau gunakan web/TUI version
 # gtk = "0.6"
 # glib = "0.18"
 
