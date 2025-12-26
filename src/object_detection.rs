@@ -167,7 +167,7 @@ impl ObjectDetector {
             
             frame_count += 1;
             
-            // Run detection every frame for live detection (or every N frames for performance)
+            // Run detection every frame for live detection
             let detections = self.detect_frame_opencv(&frame, conf_threshold)?;
             
             // Draw bounding boxes on frame
@@ -175,11 +175,17 @@ impl ObjectDetector {
                 self.draw_detections(&mut frame, &detections)?;
             }
             
-            // Print detections (every 30 frames to reduce spam)
-            if frame_count % 30 == 0 && !detections.is_empty() {
-                println!("\nFrame {} - Detections:", frame_count);
-                for det in &detections {
-                    println!("  {}", det);
+            // Print status every 30 frames to show it's working
+            if frame_count % 30 == 0 {
+                if !detections.is_empty() {
+                    println!("\n📹 Frame {} - Detections:", frame_count);
+                    for det in &detections {
+                        println!("  ✅ {}", det);
+                    }
+                } else {
+                    print!(".");
+                    use std::io::Write;
+                    std::io::stdout().flush().unwrap();
                 }
             }
             
@@ -301,6 +307,7 @@ impl ObjectDetector {
     }
     
     #[cfg(feature = "webcam")]
+    #[allow(dead_code)]
     fn nms(&self, mut detections: Vec<Detection>, iou_threshold: f32) -> Vec<Detection> {
         // Simple NMS implementation
         detections.sort_by(|a, b| b.confidence.partial_cmp(&a.confidence).unwrap());
@@ -331,6 +338,7 @@ impl ObjectDetector {
     }
     
     #[cfg(feature = "webcam")]
+    #[allow(dead_code)]
     fn calculate_iou(&self, box1: &[f32; 4], box2: &[f32; 4]) -> f32 {
         let x1 = box1[0].max(box2[0]);
         let y1 = box1[1].max(box2[1]);
