@@ -3,6 +3,11 @@ name = "rust_app"
 version = "0.1.0"
 edition = "2021"
 
+[features]
+default = []
+webcam = ["opencv-highgui"]
+opencv-highgui = []
+
 [dependencies]
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
@@ -11,6 +16,14 @@ tokio = { version = "1", features = ["full"] }
 axum = "0.7"
 tower = "0.4"
 tower-http = { version = "0.5", features = ["fs", "cors"] }
+# OpenCV - Uncomment setelah install system dependencies
+# Install: sudo apt-get install libopencv-dev libclang-dev
+# Set: export LIBCLANG_PATH="/usr/lib/x86_64-linux-gnu"
+# OpenCV - Rust 1.92.0 sudah cukup untuk OpenCV 0.88
+# OpenCV - Minimal features untuk webcam
+# Note: DNN module menyebabkan panic saat build, jadi kita disable default features
+opencv = { version = "0.88", default-features = false, features = ["videoio", "highgui", "imgproc", "imgcodecs"] }
+image = "0.24"
 
 # GUI dependencies (optional - uncomment untuk pakai GUI version)
 # NOTE: GUI version require Rust yang lebih baru (1.76+)
@@ -42,6 +55,10 @@ path = "src/main_tui.rs"
 [[bin]]
 name = "rust_app_web"
 path = "src/main_web.rs"
+
+[[bin]]
+name = "rust_object_detection"
+path = "src/main_object_detection.rs"
 
 # Linux Desktop App - Comment out karena require Rust 1.76+
 # Uncomment setelah update Rust dan uncomment GTK dependencies di atas
